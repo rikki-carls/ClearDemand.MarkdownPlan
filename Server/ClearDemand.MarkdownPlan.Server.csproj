@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ClearDemandCodeExcercise.Data\ClearDemandCodeExcercise.Data.csproj" />
     <ProjectReference Include="..\Client\ClearDemand.MarkdownPlan.Client.csproj" />
     <ProjectReference Include="..\Shared\ClearDemand.MarkdownPlan.Shared.csproj" />
   </ItemGroup>
