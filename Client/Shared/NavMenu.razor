@@ -1,0 +1,50 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Product/Markdown</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-cart" aria-hidden="true"></span>Products
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="markdown">
+                <span class="oi oi-sort-descending" aria-hidden="true"></span>Markdown Plans
+            </NavLink>
+        </div>        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="salesdata">
+                <span class="oi oi-credit-card" aria-hidden="true"></span>Sales 
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="markdownreport">
+                <span class="oi oi-bar-chart" aria-hidden="true"></span>Sales Report
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="markdownsummaryreport">
+                <span class="oi oi-graph" aria-hidden="true"></span>Summary Report
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

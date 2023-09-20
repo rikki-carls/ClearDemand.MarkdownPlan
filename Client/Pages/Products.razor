@@ -1,0 +1,240 @@
+﻿@page "/"
+@using ClearDemand.MarkdownPlan.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Products</PageTitle>
+<head>
+    <script src="scripts/script.js"></script>
+</head>
+
+<h1>Products</h1>
+
+
+@if (products == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table>
+        @foreach (var product in products.Where(x => !x.Deleted))
+        {
+            if (!product.IsEdit)
+            {
+                <tr>
+                    <td>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <td></td>
+                                    <th>Sku</th>
+                                    <th>Description</th>
+                                    <th>Cost</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="button" value="Edit" class="btn btn-dark" @onclick="() => EditProduct(product.ProductId)" /> </td>
+                                    <td>@product.Sku</td>
+                                    <td>@product.Description</td>
+                                    <td>@product.Cost</td>
+                                    <td>@product.Price</td>
+                                    <td>@product.Quantity</td>
+                                    <td><input type="button" value="Delete" class="btn btn-dark" @onclick="() => DeleteProduct(product.ProductId)" /> </td>
+                                </tr>
+                                @foreach (var loc in product.ProductStorages)
+                                {
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td colspan="1">Location : @loc.Location</td>
+                                        <td colspan="4">Quantity : @loc.Quantity</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <td></td>
+                                    <th>Sku</th>
+                                    <th>Description</th>
+                                    <th>Cost</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="button" value="Save" class="btn btn-dark" @onclick="() => SaveEditProduct(product.ProductId)" /> </td>
+                                    <td><input type="text" @bind="@product.Sku" /></td>
+                                    <td><input type="text" @bind="@product.Description" /></td>
+                                    <td><input type="text" @bind="@product.Cost" /></td>
+                                    <td><input type="text" @bind="@product.Price" /></td>
+                                    <td>@product.Quantity</td>
+                                </tr>
+                                @foreach (var loc in product.ProductStorages)
+                                {
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td colspan="1">
+                                            Location : <input type="text" @bind="@loc.Location" />
+                                        </td>
+                                        <td colspan="3">Quantity :<input type="text" @bind="@loc.Quantity" /></td>
+                                    </tr>
+                                }
+
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            }
+        }
+
+
+    </table>
+    @if (!showadd)
+    {
+        <div><input type="button" class="btn btn-dark" value="Add Product" @onclick="AddProduct" /></div>
+    }
+    <br />
+    @if (showadd)
+    {
+        <div>
+            <table class="table">
+                <tr>
+                    <td>Sku : <input type="text" @bind="@newProduct.Sku" /></td>
+                    <td>Description : <input type="text" @bind="@newProduct.Description" /></td>
+                    <td>Cost : <input type="number" step=".01" pattern="^\d*(\.\d{0,2})?$" @bind="@newProduct.Cost" /></td>
+                    <td>Price : <input type="number" step=".01" pattern="^\d*(\.\d{0,2})?$" @bind="@newProduct.Price" /></td>
+                </tr>
+                @foreach (var stor in newProduct.ProductStorages)
+                {
+                    <tr>
+                        <td>Location : <input type="text" @bind="@stor.Location" /></td>
+                        <td>Quantity : <input type="number" @bind="@stor.Quantity" /></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+            </table>
+        </div>
+        <div><input type="button" class="btn btn-dark" value="Save Product" @onclick="SaveProduct" /></div>
+    }
+
+}
+@code {
+    private Product[]? products;
+    private string errormessage = "";
+    private bool showadd = false;
+    private Product? newProduct;
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await Http.GetFromJsonAsync<Product[]>("Product");
+    }
+
+    private void AddProduct()
+    {
+        showadd = true;
+        newProduct = new Product();
+        newProduct.ProductStorages.Add(new ProductStorage());
+    }
+
+    private async void DeleteProduct(string productId)
+    {
+        var product = await Http.DeleteFromJsonAsync<Product>(productId);
+        products = await Http.GetFromJsonAsync<Product[]>("Product");
+        StateHasChanged();
+
+    }
+
+    private void EditProduct(string productId)
+    {
+        products.Where(x => x.ProductId == productId).FirstOrDefault().IsEdit = true;
+    }
+
+    private async void SaveProduct()
+    {
+        ValidateProduct(newProduct);
+        if (!string.IsNullOrEmpty(errormessage))
+        {
+            Alert();
+            return;
+        }
+        newProduct.ProductId = Guid.NewGuid().ToString("N");
+        foreach (var loc in newProduct.ProductStorages)
+        {
+            loc.ProductId = newProduct.ProductId;
+            loc.ProductStorageId = Guid.NewGuid().ToString("N");
+        }
+        await Http.PostAsJsonAsync<Product>("Product", newProduct);
+        showadd = false;
+        newProduct = null;
+        products = await Http.GetFromJsonAsync<Product[]>("Product");
+        StateHasChanged();
+    }
+
+    private async void SaveEditProduct(string productId)
+    {
+        var product = products.Where(x => x.ProductId == productId).FirstOrDefault();
+        ValidateProduct(product);
+        if (!string.IsNullOrEmpty(errormessage))
+        {
+            Alert();
+            return;
+        }
+        await Http.PutAsJsonAsync<Product>("Product", product);
+        product.IsEdit = false;
+        product.Quantity = product.ProductStorages.Sum(x => x.Quantity);
+        StateHasChanged();
+    }
+
+    private void ValidateProduct(Product product)
+    {
+        errormessage = "";
+        if (string.IsNullOrEmpty(product.Sku))
+        {
+            errormessage = "Please enter a Sku.";
+            return;
+        }
+        if (string.IsNullOrEmpty(product.Description))
+        {
+            errormessage = "Please enter a description.";
+            return;
+        }
+        if (product.Cost <= 0)
+        {
+            errormessage = "Cost must be greater than 0.";
+            return;
+        }
+        if (product.Price <= 0)
+        {
+            errormessage = "Price must be greater than 0.";
+            return;
+        }
+        foreach (var loc in product.ProductStorages)
+        {
+            if (string.IsNullOrEmpty(loc.Location))
+            {
+                errormessage = "Please enter a location for product.";
+                return;
+            }
+        }
+    }
+
+    public async Task Alert() => await JSRuntime.InvokeAsync<string>("Alert", new object[] { errormessage });
+}

@@ -1,0 +1,150 @@
+﻿@page "/markdownreport"
+@using ClearDemand.MarkdownPlan.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>MarkdownReport</PageTitle>
+
+<head>
+    <script src="scripts/script.js"></script>
+</head>
+
+<h1>Markdown Detail Report</h1>
+
+
+@if (markdownPlans == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        <table class="table">
+            <tr>
+                <td colspan="3">
+                    <Select class="form-control" style="width:20em;" @onchange="selectedValue">
+                        <option value="">select markdown plan</option>
+                        @foreach (var plan in markdownPlans)
+                        {
+                            <option value="@plan.MarkdownPlanId">@plan.Description</option>
+                        }
+                    </Select>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    @if (!string.IsNullOrEmpty(selectedPlan) && sales != null)
+    {
+        <div>
+            <table>
+                <tr>
+                    <td>Product :</td>
+                    <td> @product.Sku</td>
+                    <td style="width:200px;padding:0px 10px 0px 10px;">@product.Description</td>
+                    <td>Starting Inventory : </td>
+                    <td>@product.Quantity</td>
+                </tr>
+            </table>
+
+            <table class="table table-bordered">
+                @foreach (var sale in sales)
+                {
+
+                    <tr>
+                        <td>@sale.SaleDate.Value.ToShortDateString()</td>
+                        <td>Quantity Sold : @sale.Quantity   </td>
+                        <td>Inventory Left : @sale.InventoryLeft</td>
+                        <td>Cost : @sale.Cost   </td>
+                        <td>Price : @sale.AdjustedPrice   </td>
+                        <td>Margin : @sale.Margin   </td>
+                        <td>Profit : @sale.Profit</td>
+
+                    </tr>
+                }
+                <tr><td>Total Profit : @totalProfit</td></tr>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private MarkdownPlan[]? markdownPlans;
+    private string selectedPlan = "";
+    private Sale[]? sales;
+    private int quantityLeft = 0;
+    private int startquantity = 0;
+    private Product product;
+    string? errormessage = "";
+    public decimal totalProfit = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        markdownPlans = await Http.GetFromJsonAsync<MarkdownPlan[]>("MarkdownPlan");
+
+    }
+
+    public async void selectedValue(ChangeEventArgs selectEvent)
+    {
+        selectedPlan = selectEvent.Value?.ToString();
+        var plan = markdownPlans.Where(x => x.MarkdownPlanId == selectedPlan).FirstOrDefault();
+        var url = $"Product?productId={plan.ProductId}";
+        var products = await Http.GetFromJsonAsync<List<Product>>(url);
+        product = products.FirstOrDefault();
+        var startDate = plan.StartDate;
+        quantityLeft = product.Quantity;
+        startquantity = product.Quantity;
+
+
+        if (plan.Sales.Count == 0)
+        {
+            var salelist = new List<Sale>();
+
+            while (startDate != plan.EndDate.AddDays(1))
+            {
+                salelist.Add(new Sale()
+                    {
+                        SaleId = Guid.NewGuid().ToString("N"),
+                        MarkdownPlanId = selectedPlan,
+                        SaleDate = startDate,
+                        Cost = product.Cost,
+                        AdjustedPrice = GetMarkdownPrice(plan.MarkdownRules.ToArray(), startDate, product.Price)
+
+                    });
+                startDate = startDate.AddDays(1);
+            }
+            sales = salelist.ToArray();
+            plan.Sales = sales;
+
+        }
+        else
+        {
+            foreach (var s in plan.Sales)
+            {
+                s.InventoryLeft = quantityLeft -= s.Quantity;
+            }
+            totalProfit = plan.Sales.Sum(x => x.Profit);
+            sales = plan.Sales.ToArray();
+        }
+        StateHasChanged();
+
+    }
+
+    public decimal GetMarkdownPrice(MarkdownRule[] rules, DateTime date, decimal Price)
+    {
+        var validRule = new List<MarkdownRule>();
+        foreach (var rule in rules)
+        {
+            if (rule.EffectiveDate <= date)
+            {
+                validRule.Add(rule);
+                Price = Price - (decimal)(Price / rule.PriceReductionPercent);
+            }
+
+        }
+        return Price;
+
+    }
+
+    public async Task Alert() => await JSRuntime.InvokeAsync<string>("Alert", new object[] { errormessage });
+}

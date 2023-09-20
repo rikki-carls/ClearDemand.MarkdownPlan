@@ -1,0 +1,72 @@
+﻿@page "/markdownsummaryreport"
+@using ClearDemand.MarkdownPlan.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>MarkdownSUmmaryReport</PageTitle>
+
+<head>
+    <script src="scripts/script.js"></script>
+</head>
+
+<h1>Markdown Summary Data</h1>
+
+
+@if (markdownPlans == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    @foreach (var plan in markdownPlans)
+    {
+        <div>
+
+            <table class="table table-bordered">
+                <tr>
+                    <td><b>@plan.Description</b></td>
+                    <td>Product : @plan.Product.Sku</td>
+                    <td> @plan.Product.Description</td>
+                    <td>Starting Inventory : @plan.Product.Quantity</td>
+                </tr>
+
+
+                <tr>
+                    <td>Total Sold : @plan.Sales.Sum(x=>x.Quantity)</td>
+                    <td>Profit : @plan.Sales.Sum(x=>x.Profit)</td>
+                    <td>Inventory Left : @GetInventoryLeft(plan.Product.Quantity, plan.Sales)</td>
+
+                </tr>
+
+
+            </table>
+        </div>
+    }
+    <div><table><tr><td>Total Profit : @totalProfit</td></tr></table></div>
+
+}
+
+@code {
+    private MarkdownPlan[]? markdownPlans;
+    private string selectedPlan = "";
+    private Sale[]? sales;
+    private int quantityLeft = 0;
+    private int startquantity = 0;
+    private Product product;
+    string? errormessage = "";
+    public decimal totalProfit = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        markdownPlans = await Http.GetFromJsonAsync<MarkdownPlan[]>("MarkdownPlan");
+        totalProfit = markdownPlans.SelectMany(x => x.Sales).Sum(x => x.Profit);
+
+    }
+
+    private int GetInventoryLeft(int quantity, ICollection<Sale> sales)
+    {
+        return quantity - sales.Sum(x => x.Quantity);
+    }
+
+    public async Task Alert() => await JSRuntime.InvokeAsync<string>("Alert", new object[] { errormessage });
+}

@@ -1,0 +1,400 @@
+﻿@page "/markdown"
+@using ClearDemand.MarkdownPlan.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager _navigationManager
+
+<PageTitle>Markdown Plans</PageTitle>
+
+<head>
+    <script src="scripts/script.js"></script>
+</head>
+
+<h1>Markdown Plans</h1>
+
+@if (markdownPlans == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table>
+        <tbody>
+            @foreach (var markdownPlan in markdownPlans.Where(x => !x.Deleted))
+            {
+                if (!markdownPlan.IsEdit)
+                {
+                    <tr>
+                        <td>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Sku</th>
+                                        <th>Description</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="button" value="Edit" class="btn btn-dark" @onclick="() => EditMarkdown(markdownPlan.MarkdownPlanId)" /> </td>
+                                        <td>@markdownPlan.Product.Sku</td>
+                                        <td>@markdownPlan.Description</td>
+                                        <td>@markdownPlan.StartDate.ToShortDateString()</td>
+                                        <td>@markdownPlan.EndDate.ToShortDateString()</td>
+                                        <td><input type="button" value="Delete" class="btn btn-dark" @onclick="() => DeleteMarkdown(markdownPlan.MarkdownPlanId)" /> </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        @foreach (var rule in markdownPlan.MarkdownRules.OrderBy(x => x.EffectiveDate))
+                                        {
+                                            <td>@rule.EffectiveDate.ToShortDateString() : @rule.PriceReductionPercent %</td>
+                                        }
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Sku</th>
+                                        <th>Description</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <tr>
+                                        <td><input type="button" value="Save" class="btn btn-dark" @onclick="() => SaveEditMarkdown(markdownPlan.MarkdownPlanId)" /> </td>
+                                        <td>
+                                            <Select class="form-control" style="width:20em;" @onchange="selectedValue">
+                                                <option value="">select product for markdown</option>
+                                                @foreach (var prod in products.Where(x => x.Quantity > 0))
+                                                {
+                                                    @if (prod.ProductId == markdownPlan.ProductId)
+                                                    {
+                                                        <option value="@prod.ProductId" selected>@prod.Sku</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@prod.ProductId">@prod.Sku</option>
+                                                    }
+                                                }
+                                            </Select>
+                                        </td>
+                                        <td><input type="text" @bind="@markdownPlan.Description" /></td>
+                                        <td><input type="date" @bind="@markdownPlan.StartDate" /></td>
+                                        <td><input type="date" @bind="@markdownPlan.EndDate" /></td>
+
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        @foreach (var rule in markdownPlan.MarkdownRules.OrderBy(x => x.EffectiveDate))
+                                        {
+                                            <td>@rule.EffectiveDate.ToShortDateString() :<input type="number" style="width:3em" min="1" max="99" @bind="@rule.PriceReductionPercent" />%</td>
+                                        }
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    @if (!showadd)
+    {
+        <div><input type="button" class="btn btn-dark" value="Add Markdown Plan" @onclick="AddMarkdown" /></div>
+    }
+    <br />
+    @if (showadd)
+    {
+        <div>
+            <table class="table">
+                <tr>
+                    <td colspan="3">
+                        <Select class="form-control" style="width:20em;" @onchange="selectedValue">
+                            <option value="">select product for markdown</option>
+                            @foreach (var prod in products.Where(x => x.Quantity > 0))
+                            {
+                                <option value="@prod.ProductId">@prod.Sku</option>
+                            }
+                        </Select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Description: <input @bind="@descriptionText" @oninput="(e)=> { descriptionText = e.Value ==null? string.Empty:(string)e.Value; }" />
+                    </td>
+                    <td>
+                        Start Date: <input type="date" @bind="@startDateText" @oninput="(e)=> { startDateText = e.Value ==null? null :DateTime.Parse(e.Value.ToString()); }" />
+                    </td>
+                    <td>
+                        End Date: <input type="date" @bind="@endDateText" @oninput="(e)=> { endDateText = e.Value ==null? null :DateTime.Parse(e.Value.ToString()); }" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Starting %: <input type="number" style="width:7em" min="1" max="99" @bind="@startPercent" @oninput="(e)=> { startPercent = e.Value ==null? null :int.Parse(e.Value.ToString()); }" /></td>
+                    <td>Midway % : <input type="number" style="width:7em" min="1" max="99" @bind="@midPercent" @oninput="(e)=> { midPercent =  e.Value ==null? null :int.Parse(e.Value.ToString()); }" /></td>
+                    <td>Ending % : <input type="number" style="width:7em" min="1" max="99" @bind="@endPercent" @oninput="(e)=> { endPercent =  e.Value ==null? null :int.Parse(e.Value.ToString()); }" /></td>
+                </tr>
+            </table>
+        </div>
+        <div><input type="button" class="btn btn-dark" value="Save Plan" @onclick="SaveMarkdown" /></div>
+    }
+}
+@code {
+    private MarkdownPlan[]? markdownPlans;
+    private Product[]? products;
+    string descriptionText = "";
+    DateTime? startDateText = null;
+    DateTime? endDateText = null;
+    int? startPercent = 0;
+    int? midPercent = 0;
+    int? endPercent = 0;
+    bool showadd = false;
+    string? errormessage = "";
+    string? selectedProduct = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        markdownPlans = await Http.GetFromJsonAsync<MarkdownPlan[]>("MarkdownPlan");
+        products = await Http.GetFromJsonAsync<Product[]>("Product");
+        products = products.Where(x => !x.Deleted).ToArray();
+
+    }
+
+    private void AddMarkdown()
+    {
+        showadd = true;
+    }
+
+    private async void SaveEditMarkdown(string planId)
+    {
+        var markdown = markdownPlans.Where(x => x.MarkdownPlanId == planId).FirstOrDefault();
+        ValidateEditMarkdown(markdown);
+        if (!string.IsNullOrEmpty(errormessage))
+        {
+            Alert();
+            return;
+        }
+        var middate = markdown.StartDate.AddDays((markdown.EndDate.Day - markdown.StartDate.Day) / 2);
+        markdown.MarkdownRules.ToArray()[1].EffectiveDate = middate;
+        await Http.PutAsJsonAsync<MarkdownPlan>("MarkdownPlan", markdown);
+        markdown.IsEdit = false;
+        StateHasChanged();
+
+
+
+
+
+    }
+
+    private async void DeleteMarkdown(string planId)
+    {
+        var plan = await Http.DeleteFromJsonAsync<MarkdownPlan>($"MarkdownPlan?planId={planId}");
+        markdownPlans = await Http.GetFromJsonAsync<MarkdownPlan[]>("MarkdownPlan");
+        StateHasChanged();
+    }
+
+    private async void SaveMarkdown()
+    {
+        ValidateMarkdown();
+        if (!string.IsNullOrEmpty(errormessage))
+        {
+            Alert();
+            return;
+        }
+
+        var rules = new List<MarkdownRule>();
+        var markdownGuid = Guid.NewGuid().ToString("N");
+        rules.Add(new MarkdownRule()
+            {
+                MarkdownRuleId = Guid.NewGuid().ToString("N"),
+                EffectiveDate = startDateText.Value,
+                PriceReductionPercent = startPercent.Value,
+                MarkdownPlanId = markdownGuid
+
+            });
+        var middate = startDateText.Value.AddDays((endDateText.Value.Day - startDateText.Value.Day) / 2);
+        rules.Add(new MarkdownRule()
+            {
+                MarkdownRuleId = Guid.NewGuid().ToString("N"),
+                EffectiveDate = middate,
+                PriceReductionPercent = midPercent.Value,
+                MarkdownPlanId = markdownGuid
+
+            });
+
+        rules.Add(new MarkdownRule()
+            {
+                MarkdownRuleId = Guid.NewGuid().ToString("N"),
+                EffectiveDate = endDateText.Value,
+                PriceReductionPercent = endPercent.Value,
+                MarkdownPlanId = markdownGuid
+
+            });
+        var plan = new MarkdownPlan()
+            {
+                MarkdownPlanId = markdownGuid,
+                ProductId = selectedProduct,
+                Description = descriptionText,
+                StartDate = startDateText.Value,
+                EndDate = endDateText.Value,
+                MarkdownRules = rules
+            };
+
+        await Http.PostAsJsonAsync<MarkdownPlan>("MarkdownPlan", plan);
+        showadd = false;
+        ClearEntries();
+        markdownPlans = await Http.GetFromJsonAsync<MarkdownPlan[]>("MarkdownPlan");
+        StateHasChanged();
+
+    }
+
+    private void EditMarkdown(string planId)
+    {
+        markdownPlans.Where(x => x.MarkdownPlanId == planId).FirstOrDefault().IsEdit = true;
+    }
+
+    public void selectedValue(ChangeEventArgs selectEvent)
+    {
+        selectedProduct = selectEvent.Value?.ToString();
+    }
+
+    private void ValidateMarkdown()
+    {
+        if (string.IsNullOrEmpty(selectedProduct))
+        {
+            errormessage = "Please choose a product.";
+            return;
+        }
+        if (string.IsNullOrEmpty(descriptionText))
+        {
+            errormessage = "Please enter a description.";
+            return;
+        }
+
+        if (startDateText == null)
+        {
+            errormessage = "Please enter a start date.";
+            return;
+        }
+        if (endDateText == null)
+        {
+            errormessage = "Please enter an end date.";
+            return;
+        }
+        var diff = startDateText.Value.Subtract(DateTime.Now).Days;
+
+        if (startDateText < DateTime.Now && startDateText.Value.Subtract(DateTime.Now).Days != 0)
+        {
+            errormessage = "Start date cannot be in the past.";
+            return;
+        }
+        var test = endDateText.Value.Subtract(startDateText.Value).Days;
+        if (endDateText.Value.Subtract(startDateText.Value).Days < 7)
+        {
+            errormessage = "Plan must be at least 7 days.";
+            return;
+        }
+
+        if (startPercent == 0 || midPercent == 0 || endPercent == 0)
+        {
+            errormessage = "Percentages must be greater than 0";
+            return;
+        }
+
+        var product = products.Where(x => x.ProductId == selectedProduct).FirstOrDefault();
+        var firstprice = product.Price - (product.Price / startPercent);
+        var midprice = firstprice - (firstprice / midPercent);
+        var finalprice = midprice - (midprice / endPercent);
+
+        if (finalprice < (decimal)0.50)
+        {
+            errormessage = $"Please adjust percentages so price is greater than .50 on final markdown. First {firstprice} Mid {midprice} Last {finalprice}";
+            Alert();
+            return;
+        }
+    }
+
+    private void ValidateEditMarkdown(MarkdownPlan plan)
+    {
+        if (string.IsNullOrEmpty(plan.ProductId))
+        {
+            errormessage = "Please choose a product.";
+            return;
+        }
+        if (string.IsNullOrEmpty(plan.Description))
+        {
+            errormessage = "Please enter a description.";
+            return;
+        }
+
+        if (plan.StartDate == null)
+        {
+            errormessage = "Please enter a start date.";
+            return;
+        }
+        if (plan.EndDate == null)
+        {
+            errormessage = "Please enter an end date.";
+            return;
+        }
+        var diff = plan.StartDate.Subtract(DateTime.Now).Days;
+
+
+        if (plan.EndDate.Subtract(plan.StartDate).Days < 7)
+        {
+            errormessage = "Plan must be at least 7 days.";
+            return;
+        }
+
+        foreach (var r in plan.MarkdownRules)
+        {
+            if (r.PriceReductionPercent == 0)
+            {
+                errormessage = "Percentages must be greater than 0";
+                return;
+            }
+        }
+
+        var product = products.Where(x => x.ProductId == plan.ProductId).FirstOrDefault();
+        var firstprice = product.Price - (product.Price / plan.MarkdownRules.ToArray()[0].PriceReductionPercent);
+        var midprice = firstprice - (firstprice / plan.MarkdownRules.ToArray()[1].PriceReductionPercent);
+        var finalprice = midprice - (midprice / plan.MarkdownRules.ToArray()[2].PriceReductionPercent);
+
+        if (finalprice < (decimal)0.50)
+        {
+            errormessage = $"Please adjust percentages so price is greater than .50 on final markdown. First {firstprice} Mid {midprice} Last {finalprice}";
+            Alert();
+            return;
+        }
+    }
+
+    private void ClearEntries()
+    {
+        descriptionText = "";
+        startDateText = null;
+        endDateText = null;
+        startPercent = 0;
+        midPercent = 0;
+        endPercent = 0;
+    }
+
+    public async Task Alert() => await JSRuntime.InvokeAsync<string>("Alert", new object[] { errormessage });
+
+}
