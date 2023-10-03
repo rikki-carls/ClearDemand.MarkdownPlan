@@ -36,7 +36,7 @@ namespace ClearDemand.MarkdownPlan.Server.Controllers
             markdownPlanRepository.UpdateMarkdownPlan(markdownPlan);
         }
         [HttpDelete]
-        public Shared.MarkdownPlan Delete(string planId)
+        public Shared.MarkdownPlan Delete(int planId)
         {
             markdownPlanRepository.DeleteMarkdownPlan(planId);
             return new Shared.MarkdownPlan();

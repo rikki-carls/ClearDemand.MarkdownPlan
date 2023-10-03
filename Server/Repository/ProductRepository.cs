@@ -9,10 +9,10 @@ namespace ClearDemand.MarkdownPlan.Server.Repository
     public interface IProductRepository
     {
         IEnumerable<Shared.Product> GetProducts();
-        Shared.Product GetProduct(string productId);
+        Shared.Product GetProduct(int productId);
         void UpdateProduct(Shared.Product product);
         void AddProduct(Shared.Product product);
-        void DeleteProduct(string productId);
+        void DeleteProduct(int productId);
     }
     public class ProductRepository : IProductRepository
     {
@@ -34,7 +34,7 @@ namespace ClearDemand.MarkdownPlan.Server.Repository
             return mapper.Map<IEnumerable<Shared.Product>>(rtn);
         }
 
-        public Shared.Product GetProduct(string productId)
+        public Shared.Product GetProduct(int productId)
         {
             var rtn = dbContext.Products
                 .Include(x => x.ProductStorages)
@@ -61,17 +61,16 @@ namespace ClearDemand.MarkdownPlan.Server.Repository
         public void AddProduct(Shared.Product product)
         {
             var entity = mapper.Map<Product>(product);
-            entity.ProductId = Guid.NewGuid().ToString("N");
+            
             foreach(var loc in product.ProductStorages)
             {
                 loc.ProductId = entity.ProductId;
-                loc.ProductStorageId = Guid.NewGuid().ToString("N");
             }
             dbContext.Products.Add(entity);
             dbContext.SaveChanges();
         }
 
-        public void DeleteProduct(string productId) 
+        public void DeleteProduct(int productId) 
         {
             var prod = dbContext.Products.Include(x=>x.ProductStorages).Where(x => x.ProductId == productId).FirstOrDefault();
             prod.Deleted = true;

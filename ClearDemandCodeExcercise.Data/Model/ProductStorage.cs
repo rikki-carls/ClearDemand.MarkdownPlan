@@ -5,9 +5,9 @@ namespace ClearDemandCodeExcercise.Data.Model;
 
 public partial class ProductStorage
 {
-    public string ProductStorageId { get; set; }
+    public int ProductStorageId { get; set; }
 
-    public string ProductId { get; set; }
+    public int ProductId { get; set; }
 
     public string Location { get; set; } = null!;
 

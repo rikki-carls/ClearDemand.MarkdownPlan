@@ -34,7 +34,7 @@ public partial class ProductTestContext : DbContext
     {
         modelBuilder.Entity<MarkdownPlan>(entity =>
         {
-            entity.HasKey(e => e.MarkdownPlanId).HasName("PRIMARY");
+            entity.HasKey(e => e.MarkdownPlanId);
 
             entity.ToTable("MarkdownPlan");
 
@@ -98,6 +98,8 @@ public partial class ProductTestContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Price).HasPrecision(12);
             entity.Property(e => e.Sku).HasMaxLength(45);
+
+            
         });
 
         modelBuilder.Entity<ProductStorage>(entity =>

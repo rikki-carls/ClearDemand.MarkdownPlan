@@ -154,15 +154,15 @@ else
         newProduct.ProductStorages.Add(new ProductStorage());
     }
 
-    private async void DeleteProduct(string productId)
+    private async void DeleteProduct(int productId)
     {
-        var product = await Http.DeleteFromJsonAsync<Product>(productId);
+        var product = await Http.DeleteFromJsonAsync<Product>(productId.ToString());
         products = await Http.GetFromJsonAsync<Product[]>("Product");
         StateHasChanged();
 
     }
 
-    private void EditProduct(string productId)
+    private void EditProduct(int productId)
     {
         products.Where(x => x.ProductId == productId).FirstOrDefault().IsEdit = true;
     }
@@ -175,12 +175,7 @@ else
             Alert();
             return;
         }
-        newProduct.ProductId = Guid.NewGuid().ToString("N");
-        foreach (var loc in newProduct.ProductStorages)
-        {
-            loc.ProductId = newProduct.ProductId;
-            loc.ProductStorageId = Guid.NewGuid().ToString("N");
-        }
+        
         await Http.PostAsJsonAsync<Product>("Product", newProduct);
         showadd = false;
         newProduct = null;
@@ -188,7 +183,7 @@ else
         StateHasChanged();
     }
 
-    private async void SaveEditProduct(string productId)
+    private async void SaveEditProduct(int productId)
     {
         var product = products.Where(x => x.ProductId == productId).FirstOrDefault();
         ValidateProduct(product);

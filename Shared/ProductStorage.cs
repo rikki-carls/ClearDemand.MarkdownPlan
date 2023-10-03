@@ -8,9 +8,9 @@ namespace ClearDemand.MarkdownPlan.Shared
 {
     public class ProductStorage
     {
-        public string ProductStorageId { get; set; } = null!;
+        public int ProductStorageId { get; set; }
 
-        public string ProductId { get; set; } = null!;
+        public int ProductId { get; set; }
 
         public string Location { get; set; } = null!;
 

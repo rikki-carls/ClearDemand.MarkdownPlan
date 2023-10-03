@@ -8,7 +8,7 @@ namespace ClearDemand.MarkdownPlan.Shared
 {
     public class MarkdownPlan
     {
-        public string MarkdownPlanId { get; set; }
+        public int MarkdownPlanId { get; set; }
 
         public string? Description { get; set; }
 
@@ -19,7 +19,7 @@ namespace ClearDemand.MarkdownPlan.Shared
         public ICollection<MarkdownRule> MarkdownRules { get; set; } = new List<MarkdownRule>();
         public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
 
-        public string ProductId { get; set; }
+        public int ProductId { get; set; }
 
         public bool Deleted { get; set; }
 

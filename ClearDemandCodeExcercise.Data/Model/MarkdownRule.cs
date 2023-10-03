@@ -5,9 +5,9 @@ namespace ClearDemandCodeExcercise.Data.Model;
 
 public partial class MarkdownRule
 {
-    public string MarkdownRuleId { get; set; }
+    public int MarkdownRuleId { get; set; }
 
-    public string MarkdownPlanId { get; set; }
+    public int MarkdownPlanId { get; set; }
 
     public DateTime EffectiveDate { get; set; }
 

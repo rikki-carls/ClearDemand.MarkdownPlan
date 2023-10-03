@@ -167,7 +167,7 @@ else
     int? endPercent = 0;
     bool showadd = false;
     string? errormessage = "";
-    string? selectedProduct = "";
+    int selectedProduct = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -182,8 +182,9 @@ else
         showadd = true;
     }
 
-    private async void SaveEditMarkdown(string planId)
+    private async void SaveEditMarkdown(int planId)
     {
+        errormessage = "";
         var markdown = markdownPlans.Where(x => x.MarkdownPlanId == planId).FirstOrDefault();
         ValidateEditMarkdown(markdown);
         if (!string.IsNullOrEmpty(errormessage))
@@ -203,7 +204,7 @@ else
 
     }
 
-    private async void DeleteMarkdown(string planId)
+    private async void DeleteMarkdown(int planId)
     {
         var plan = await Http.DeleteFromJsonAsync<MarkdownPlan>($"MarkdownPlan?planId={planId}");
         markdownPlans = await Http.GetFromJsonAsync<MarkdownPlan[]>("MarkdownPlan");
@@ -212,6 +213,7 @@ else
 
     private async void SaveMarkdown()
     {
+        errormessage = "";
         ValidateMarkdown();
         if (!string.IsNullOrEmpty(errormessage))
         {
@@ -220,42 +222,37 @@ else
         }
 
         var rules = new List<MarkdownRule>();
-        var markdownGuid = Guid.NewGuid().ToString("N");
         rules.Add(new MarkdownRule()
             {
-                MarkdownRuleId = Guid.NewGuid().ToString("N"),
                 EffectiveDate = startDateText.Value,
                 PriceReductionPercent = startPercent.Value,
-                MarkdownPlanId = markdownGuid
 
             });
         var middate = startDateText.Value.AddDays((endDateText.Value.Day - startDateText.Value.Day) / 2);
         rules.Add(new MarkdownRule()
             {
-                MarkdownRuleId = Guid.NewGuid().ToString("N"),
                 EffectiveDate = middate,
                 PriceReductionPercent = midPercent.Value,
-                MarkdownPlanId = markdownGuid
 
             });
 
         rules.Add(new MarkdownRule()
             {
-                MarkdownRuleId = Guid.NewGuid().ToString("N"),
                 EffectiveDate = endDateText.Value,
                 PriceReductionPercent = endPercent.Value,
-                MarkdownPlanId = markdownGuid
 
             });
         var plan = new MarkdownPlan()
             {
-                MarkdownPlanId = markdownGuid,
                 ProductId = selectedProduct,
                 Description = descriptionText,
                 StartDate = startDateText.Value,
                 EndDate = endDateText.Value,
-                MarkdownRules = rules
+                MarkdownRules = rules,                
             };
+
+        
+        plan.Product = products.ToList().Where(x=>x.ProductId == plan.ProductId).FirstOrDefault();
 
         await Http.PostAsJsonAsync<MarkdownPlan>("MarkdownPlan", plan);
         showadd = false;
@@ -265,19 +262,19 @@ else
 
     }
 
-    private void EditMarkdown(string planId)
+    private void EditMarkdown(int planId)
     {
         markdownPlans.Where(x => x.MarkdownPlanId == planId).FirstOrDefault().IsEdit = true;
     }
 
     public void selectedValue(ChangeEventArgs selectEvent)
     {
-        selectedProduct = selectEvent.Value?.ToString();
+        selectedProduct = int.Parse(selectEvent.Value.ToString());
     }
 
     private void ValidateMarkdown()
     {
-        if (string.IsNullOrEmpty(selectedProduct))
+        if (selectedProduct == 0)
         {
             errormessage = "Please choose a product.";
             return;
@@ -333,7 +330,7 @@ else
 
     private void ValidateEditMarkdown(MarkdownPlan plan)
     {
-        if (string.IsNullOrEmpty(plan.ProductId))
+        if (plan.ProductId == 0)
         {
             errormessage = "Please choose a product.";
             return;

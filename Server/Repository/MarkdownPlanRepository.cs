@@ -10,7 +10,7 @@ namespace ClearDemand.MarkdownPlan.Server.Repository
         IEnumerable<Shared.MarkdownPlan> GetMarkdownPlans();
         void SaveMarkdownPlan(Shared.MarkdownPlan markdownPlan);
         void UpdateMarkdownPlan(Shared.MarkdownPlan markdownPlan);
-        void DeleteMarkdownPlan(string markdownPlanId);
+        void DeleteMarkdownPlan(int markdownPlanId);
     }
     public class MarkdownPlanRepository : IMarkdownPlanRepository
     {
@@ -64,7 +64,7 @@ namespace ClearDemand.MarkdownPlan.Server.Repository
             dbContext.SaveChanges();
         }
 
-        public void DeleteMarkdownPlan(string markdownPlanId)
+        public void DeleteMarkdownPlan(int markdownPlanId)
         {
             var plan = dbContext.MarkdownPlans.Include(x=>x.MarkdownRules).FirstOrDefault(x => x.MarkdownPlanId == markdownPlanId);
             plan.Deleted = true;

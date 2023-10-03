@@ -34,7 +34,7 @@ else
         </table>
     </div>
 
-    @if (!string.IsNullOrEmpty(selectedPlan) && sales != null)
+    @if (selectedPlan != 0  && sales != null)
     {
         <div>
             <table>
@@ -70,7 +70,7 @@ else
 
 @code {
     private MarkdownPlan[]? markdownPlans;
-    private string selectedPlan = "";
+    private int selectedPlan = 0;
     private Sale[]? sales;
     private int quantityLeft = 0;
     private int startquantity = 0;
@@ -86,7 +86,7 @@ else
 
     public async void selectedValue(ChangeEventArgs selectEvent)
     {
-        selectedPlan = selectEvent.Value?.ToString();
+        selectedPlan = int.Parse(selectEvent.Value.ToString());
         var plan = markdownPlans.Where(x => x.MarkdownPlanId == selectedPlan).FirstOrDefault();
         var url = $"Product?productId={plan.ProductId}";
         var products = await Http.GetFromJsonAsync<List<Product>>(url);
@@ -104,7 +104,6 @@ else
             {
                 salelist.Add(new Sale()
                     {
-                        SaleId = Guid.NewGuid().ToString("N"),
                         MarkdownPlanId = selectedPlan,
                         SaleDate = startDate,
                         Cost = product.Cost,

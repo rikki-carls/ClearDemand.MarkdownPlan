@@ -5,11 +5,11 @@ namespace ClearDemandCodeExcercise.Data.Model;
 
 public partial class MarkdownPlan
 {
-    public string MarkdownPlanId { get; set; }
+    public int MarkdownPlanId { get; set; }
 
     public string? Description { get; set; }
 
-    public string ProductId { get; set; }
+    public int ProductId { get; set; }
 
     public DateTime StartDate { get; set; }
 

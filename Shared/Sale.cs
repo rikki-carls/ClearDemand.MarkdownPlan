@@ -8,9 +8,9 @@ namespace ClearDemand.MarkdownPlan.Shared
 {
     public class Sale
     {
-        public string SaleId { get; set; } = null!;
+        public int SaleId { get; set; }
 
-        public string MarkdownPlanId { get; set; } = null!;
+        public int MarkdownPlanId { get; set; }
 
         public DateTime? SaleDate { get; set; }
 

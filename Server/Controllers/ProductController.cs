@@ -26,8 +26,9 @@ namespace ClearDemand.MarkdownPlan.Server.Controllers
         }
 
         [HttpGet("/{productId}")]
-        public Product Get(string productId)
+        public Product Get(int productId)
         {
+            var rtn = productRepository.GetProduct(productId);
             return productRepository.GetProduct(productId);
         }
 
@@ -43,7 +44,7 @@ namespace ClearDemand.MarkdownPlan.Server.Controllers
             productRepository.UpdateProduct(product);
         }
         [HttpDelete("/{productId}")]
-        public Product Delete(string productId)
+        public Product Delete(int productId)
         {
             productRepository.DeleteProduct(productId);
             return new Product();

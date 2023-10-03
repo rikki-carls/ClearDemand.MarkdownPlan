@@ -8,7 +8,7 @@ namespace ClearDemand.MarkdownPlan.Shared
 {
     public class Product
     {
-        public string ProductId { get; set; }
+        public int ProductId { get; set; }
 
         public string Sku { get; set; } = null!;
 
